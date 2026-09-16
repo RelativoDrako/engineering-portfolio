@@ -3,14 +3,26 @@
 <p><a href="/">← All projects</a></p>
 <h1>{{ snapshot.spec.name }}</h1>
 <p class="lead">{{ snapshot.spec.plain_language_description }}</p>
+<h2>1. Understand</h2>
+<p>{{ snapshot.spec.name }} remains an independent project. This local operator can invoke its registered actions while preserving its own working directory and authority.</p>
+<h2>2. Check</h2>
+<dl class="facts">
+  <dt>Environment</dt><dd>{{ preflight.prerequisites }}</dd>
+  <dt>Latest valid run</dt><dd>{{ preflight.latest_valid_run }}</dd>
+  <dt>Evidence</dt><dd>{{ preflight.evidence_state }}</dd>
+  <dt>Revision</dt><dd>{{ preflight.revision_status }}</dd>
+</dl>
+{% if preflight.np02_port %}
+<p class="minor">PostgreSQL: {{ preflight.np02_port.port_semantics }} · listener {{ preflight.np02_port.postgresql_readiness }}</p>
+{% endif %}
 <h2>Prerequisites</h2>
 <ul>{% for item in snapshot.spec.prerequisites %}<li>{{ item }}</li>{% endfor %}</ul>
-<h2>Operator view</h2>
-<p>Use the repository's existing entrypoints from its repository root. This surface never accepts arbitrary shell commands.</p>
+<h2>3–5. Prepare, execute and review</h2>
+<p>Choose an intentional registered action. The root operator never accepts an arbitrary command and sets the project's working directory itself.</p>
 <div class="actions">
 {% for action in snapshot.spec.supported_actions %}
   {% if action not in ['feedback', 'runs'] %}
-  <form method="post" action="/projects/{{ snapshot.spec.project_id }}/operate" class="action-form"{% if action == 'cleanup' %} data-destructive="true"{% endif %}>
+  <form method="post" action="/projects/{{ snapshot.spec.project_id }}/operate" class="action-form" data-project="{{ snapshot.spec.project_id }}"{% if action == 'cleanup' %} data-destructive="true"{% endif %}>
     <input type="hidden" name="action" value="{{ action }}">
     {% if action == 'cleanup' %}<input type="hidden" name="confirm" value="false">{% endif %}
     <button type="submit">{{ action.replace('_', ' ') }}</button>
@@ -18,8 +30,10 @@
   {% endif %}
 {% endfor %}
 </div>
+<section id="operation-result" class="card operation-result" aria-live="polite" hidden></section>
 {% if snapshot.latest %}
-<h2>Latest result</h2>
+<h2>6. Verify and replay / explore</h2>
+<h3>Latest result</h3>
 <p><strong>{{ snapshot.latest.result.get('status', 'UNKNOWN') }}</strong> · run <code>{{ snapshot.latest.run_id }}</code></p>
 <pre>{{ snapshot.latest.result.get('result_summary', {}) | tojson(indent=2) }}</pre>
 <p><a href="/projects/{{ snapshot.spec.project_id }}/runs/{{ snapshot.latest.run_id }}">Inspect evidence</a> · <a href="/projects/{{ snapshot.spec.project_id }}/runs">List runs</a> · <a href="/projects/{{ snapshot.spec.project_id }}/learn">Learning</a></p>
@@ -51,4 +65,5 @@
   <label>Note (optional)<textarea name="note" rows="3"></textarea></label>
   <button type="submit">Record human feedback</button>
 </form>
+<p id="feedback-result" class="minor" aria-live="polite"></p>
 {% endblock %}

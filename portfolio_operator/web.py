@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+import asyncio
 import sys
 from pathlib import Path
 from typing import Any
@@ -14,6 +16,7 @@ from .learning import (
     project_learning_explanation,
     readiness_by_project,
 )
+from .preflight import portfolio_preflight, project_preflight
 from .registry import DESTRUCTIVE_ACTIONS, load_registry
 from .runner import run_registered_action
 from .service import PortfolioService
@@ -48,7 +51,23 @@ def _safe_evidence_reference(spec: Any, run_id: str | None) -> str:
     return f"{spec.evidence_location.rstrip('/')}/{run_id}"
 
 
-def create_app(service: PortfolioService | None = None):
+def _safe_technical_text(value: str) -> str:
+    """Keep technical details useful without leaking absolute local paths."""
+
+    return re.sub(r"(?i)[a-z]:[\\/][^\s\"']+", "<local path>", value)[-4000:]
+
+
+def _next_action(action: str, status: str) -> str:
+    if status != "PASS":
+        return "Review Technical details, then check prerequisites before retrying."
+    if action in {"demo", "operate", "replay"}:
+        return "Inspect the latest result or verify its evidence."
+    if action == "verify":
+        return "Inspect the latest result or replay it intentionally."
+    return "Review the latest result and choose the next registered project action."
+
+
+def create_app(service: PortfolioService | None = None, stop_callback: Any | None = None):
     try:
         from fastapi import FastAPI
         from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -68,13 +87,14 @@ def create_app(service: PortfolioService | None = None):
 
     @app.get("/", response_class=HTMLResponse)
     async def index() -> HTMLResponse:
-        snapshots = operator.all_snapshots()
-        return render("index.html", title="Engineering Portfolio - Local Operator", projects=snapshots)
+        snapshots = operator.all_snapshots(record=False)
+        readiness = {row["project_id"]: row for row in portfolio_preflight(operator.registry)["projects"]}
+        return render("index.html", title="Engineering Portfolio - Local Operator", projects=snapshots, readiness=readiness)
 
     @app.get("/projects/{project_id}", response_class=HTMLResponse)
     async def project(project_id: str) -> HTMLResponse:
         try:
-            snapshot = operator.snapshot(project_id)
+            snapshot = operator.snapshot(project_id, record=False)
         except (KeyError, ValueError) as exc:
             return PlainTextResponse(str(exc), status_code=404)
         return render(
@@ -82,12 +102,13 @@ def create_app(service: PortfolioService | None = None):
             title=snapshot.spec.name,
             snapshot=snapshot,
             learning=project_learning_explanation(project_id),
+            preflight=project_preflight(snapshot.spec),
         )
 
     @app.get("/projects/{project_id}/learn", response_class=HTMLResponse)
     async def project_learn(project_id: str) -> HTMLResponse:
         try:
-            snapshot = operator.snapshot(project_id)
+            snapshot = operator.snapshot(project_id, record=False)
         except (KeyError, ValueError) as exc:
             return PlainTextResponse(str(exc), status_code=404)
         baseline = deterministic_baseline(operator.store, project_id)
@@ -107,7 +128,7 @@ def create_app(service: PortfolioService | None = None):
     @app.get("/projects/{project_id}/runs", response_class=HTMLResponse)
     async def project_runs(project_id: str) -> HTMLResponse:
         try:
-            snapshot = operator.snapshot(project_id)
+            snapshot = operator.snapshot(project_id, record=False)
             runs = operator.run_ids(project_id)
         except (KeyError, ValueError) as exc:
             return PlainTextResponse(str(exc), status_code=404)
@@ -159,6 +180,7 @@ def create_app(service: PortfolioService | None = None):
             if action not in spec.supported_actions:
                 return JSONResponse({"status": "REJECTED", "reason": "action is not registered"}, status_code=400)
             result = run_registered_action(spec, action, confirm=_bool(payload.get("confirm")))
+            safe_summary = _safe_technical_text(result.result_summary)
             return JSONResponse(
                 {
                     "project_id": result.project_id,
@@ -168,8 +190,14 @@ def create_app(service: PortfolioService | None = None):
                     "prerequisite_state": result.prerequisite_state,
                     "current_stage": result.current_stage,
                     "exit_status": result.exit_status,
-                    "result_summary": result.result_summary,
+                    "result_summary": safe_summary,
                     "evidence_reference": _safe_evidence_reference(spec, None),
+                    "meaning": safe_summary,
+                    "next_action": _next_action(action, result.status),
+                    "technical_details": {
+                        "stdout": _safe_technical_text(result.stdout),
+                        "stderr": _safe_technical_text(result.stderr),
+                    },
                 }
             )
         except KeyError:
@@ -179,7 +207,7 @@ def create_app(service: PortfolioService | None = None):
     async def feedback(project_id: str, request: _Request):
         payload = _payload_from_body(await request.body())
         try:
-            snapshot = operator.snapshot(project_id)
+            snapshot = operator.snapshot(project_id, record=False)
             if snapshot.latest is None:
                 return JSONResponse({"status": "REJECTED", "reason": "no run available"}, status_code=409)
             classification = str(payload.get("classification", "")).upper()
@@ -210,6 +238,28 @@ def create_app(service: PortfolioService | None = None):
             conceptual_models=conceptual_model_metadata(),
             feedback=operator.store.feedback(),
         )
+
+    @app.get("/feedback", response_class=HTMLResponse)
+    async def feedback_overview() -> HTMLResponse:
+        return render(
+            "feedback.html",
+            title="Feedback - Engineering Portfolio",
+            feedback=operator.store.feedback(),
+            counts=operator.store.feedback_counts(),
+        )
+
+    @app.get("/diagnostics")
+    async def diagnostics() -> JSONResponse:
+        return JSONResponse(portfolio_preflight(operator.registry))
+
+    @app.post("/operator/stop")
+    async def stop_operator() -> JSONResponse:
+        """Stop only the root localhost service after this response is sent."""
+
+        if not callable(stop_callback):
+            return JSONResponse({"status": "UNAVAILABLE", "reason": "This web process is not launcher-owned."}, status_code=409)
+        asyncio.get_running_loop().call_later(0.2, stop_callback)
+        return JSONResponse({"status": "STOPPING", "meaning": "The local operator service is stopping. Project services are unchanged."})
 
     @app.get("/models", response_class=HTMLResponse)
     async def models() -> HTMLResponse:

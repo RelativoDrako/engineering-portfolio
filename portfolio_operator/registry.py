@@ -62,6 +62,9 @@ class ProjectSpec:
     latest_valid_location: str
     actions: Mapping[str, tuple[str, ...]]
     replay_change: str | None = None
+    tested_commit: str | None = None
+    requires_docker: bool = False
+    default_port: int | None = None
 
     @property
     def path(self) -> Path:
@@ -174,6 +177,9 @@ def load_registry(path: Path = REGISTRY_PATH) -> PortfolioRegistry:
             latest_valid_location=str(item["latest_valid_location"]),
             actions=actions,
             replay_change=str(item["replay_change"]) if item.get("replay_change") else None,
+            tested_commit=str(item["tested_commit"]) if item.get("tested_commit") else None,
+            requires_docker=bool(item.get("requires_docker", False)),
+            default_port=int(item["default_port"]) if item.get("default_port") is not None else None,
         )
         # Resolve during loading so an unsafe registry fails before any action.
         _ = spec.path

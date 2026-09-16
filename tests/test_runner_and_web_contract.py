@@ -1,7 +1,7 @@
 import pytest
 
 from portfolio_operator.config import DEFAULT_HOST
-from portfolio_operator.registry import load_registry
+from portfolio_operator.registry import ProjectSpec, load_registry
 from portfolio_operator.runner import build_command, run_registered_action
 
 
@@ -28,6 +28,14 @@ def test_web_evidence_reference_is_logical_and_not_private_path():
     assert "_nsambi_" not in reference
 
 
+def test_web_operation_text_redacts_absolute_windows_paths():
+    from portfolio_operator.web import _safe_technical_text
+
+    value = _safe_technical_text("evidence=C:\\_nsambi_\\projects\\enterprise\\Freelance\\06_portfolio\\x")
+    assert "_nsambi_" not in value
+    assert "<local path>" in value
+
+
 def test_web_factory_is_available_or_reports_dependency():
     from portfolio_operator import web
 
@@ -37,3 +45,15 @@ def test_web_factory_is_available_or_reports_dependency():
         assert "fastapi" in str(exc).lower()
     else:
         assert any(getattr(route, "path", "") == "/" for route in app.routes)
+        assert any(getattr(route, "path", "") == "/operator/stop" for route in app.routes)
+
+
+def test_registered_command_path_cannot_escape_project_root():
+    from portfolio_operator.runner import build_command
+
+    spec = ProjectSpec(
+        "NP01", "NP01", "../industrial-resilience-ot-lab", "x", "x", (), "var/runs", "var/latest_valid.json",
+        {"demo": ("../outside.py",)},
+    )
+    with pytest.raises(ValueError, match="escapes"):
+        build_command(spec, "demo")

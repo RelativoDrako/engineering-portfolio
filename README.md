@@ -24,23 +24,54 @@ bounded derived features, feedback and conceptual metadata.
 
 ## Quick start
 
-Run these commands from this directory. The four projects are independent
-repositories, so the root intentionally has no global demo or global pytest
-suite; operate a project from that project's repository root.
+On Windows, double-click:
+
+```text
+START_PORTFOLIO.cmd
+```
+
+The launcher checks or reuses the local root environment and opens the local
+operator in the default browser at `http://127.0.0.1:8765`. The terminal stays
+attached to the local service; use `Ctrl+C` or close it when finished. If a
+browser cannot be opened, the launcher prints the exact local URL and keeps
+serving it.
+
+CLI fallback:
+
+```text
+START_PORTFOLIO.cmd --cli
+```
+
+Diagnostics:
+
+```text
+START_PORTFOLIO.cmd --diagnostics
+```
+
+The four projects remain independent repositories and can be run directly from
+their own roots. The `engineering-portfolio` operator can also invoke their
+registered actions from this root while preserving each project's working
+directory and authority. There is intentionally no global root demo and no
+global pytest collection.
+
+### Manual fallback
+
+Use this only if the Windows launcher is unavailable:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[test]"
-.\.venv\Scripts\python.exe scripts\validate_integration.py
-.\.venv\Scripts\python.exe -m portfolio_operator
+.\.venv\Scripts\python.exe -m portfolio_operator.bootstrap
 ```
 
-The integration check performs the NP02 PostgreSQL preflight using the
-effective local port (`NP02_DB_PORT`, defaulting to the documented `55540`),
-discovers the four existing `var/latest_valid.json` pointers, records one
-observation per available latest run, and submits one synthetic
-`KNOWN_TEST_SCENARIO` feedback record per project. It does not run or alter
-project code. The operator console's first screen is:
+The integration check is observational with respect to persistent feedback. It
+uses the effective NP02 local port (`NP02_DB_PORT`, otherwise the project
+default `55433`), discovers four `var/latest_valid.json` pointers and records
+only idempotent observations. It does not run or alter project code and does
+not create feedback records. Existing synthetic feedback is retained only for
+inspection and remains labelled `SYNTHETIC_INTEGRATION_VALIDATION`.
+
+The CLI operator first screen is:
 
 ```text
 Engineering Portfolio - Local Operator
@@ -48,20 +79,20 @@ Engineering Portfolio - Local Operator
 2 NP02 Governed Data & Analytics
 3 NP03 Governed AI Assurance
 4 NP04 Architecture Decision Workbench
-5 Cross-project observations
-6 Feedback
-7 Learning concepts
+5 Project status / preflight
+6 Results / observations
+7 Feedback
+8 Learning concepts
 0 Exit
 ```
 
-Use a project view to read the plain-language explanation, prerequisites and
-latest result. Only actions present in `portfolio.toml` are offered. A replay
-uses the registered project's latest run identifier; a new project run is
-created by that project and the parent is not overwritten. Destructive cleanup
-requires an explicit `CONFIRM` in the CLI or a confirmed POST in the web
-surface. Feedback is labelled `HUMAN` when entered by an operator; the four
-records created by integration validation are labelled
-`SYNTHETIC_INTEGRATION_VALIDATION`.
+Use a project view to read its purpose, check readiness and choose an
+intentional registered action. Only actions present in `portfolio.toml` are
+offered. A replay uses the registered project's latest run identifier; a new
+project run is created by that project and the parent is not overwritten.
+Destructive cleanup requires explicit confirmation. Feedback is labelled
+`HUMAN` only when entered by an operator; the four existing integration
+validation examples remain `SYNTHETIC_INTEGRATION_VALIDATION`.
 
 ## Local web surface
 
@@ -74,9 +105,17 @@ installed:
 ```
 
 It binds to `127.0.0.1` by default. It exposes project explanations, latest
-results, logical run/evidence views, learning concepts, model metadata and
-bounded POST actions. It does not accept arbitrary shell strings, expose
-private filesystem paths, or bind to `0.0.0.0` by default.
+results, logical run/evidence views, feedback, learning concepts and bounded
+registered actions. It does not accept arbitrary shell strings, expose private
+filesystem paths, or bind to `0.0.0.0` by default.
+
+## NP02 local port semantics
+
+NP02's project default PostgreSQL port is `55433`. This workstation currently
+uses `55540` as a validated local host override because `55433` is reserved.
+The override is not a universal default. When needed locally, set
+`NP02_DB_PORT=55540` before an NP02 action; diagnostics shows whether an
+override is configured and whether its local listener responds.
 
 ## Evidence and authority
 

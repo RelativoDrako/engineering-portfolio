@@ -38,7 +38,7 @@ def _built_in(spec: ProjectSpec, action: str) -> ActionResult | None:
     if action == "explain":
         return ActionResult(spec.project_id, action, str(spec.path), None, "NOT_REQUIRED", _now(), _now(), 0, "PASS", spec.plain_language_description, None)
     if action == "setup":
-        guidance = "From the repository root: create .venv, install the project dependencies, then use the registered demo/operate action."
+        guidance = "Check readiness first. If this independent project environment is missing, use its README setup once; the root operator does not alter project environments automatically."
         return ActionResult(spec.project_id, action, str(spec.path), None, "GUIDANCE_ONLY", _now(), _now(), 0, "PASS", guidance, None)
     if action == "latest":
         latest = load_latest(spec)
@@ -60,10 +60,23 @@ def _project_python(spec: ProjectSpec) -> str:
     return sys.executable
 
 
+def _validate_command_paths(spec: ProjectSpec, tokens: list[str]) -> None:
+    """Registry command paths must resolve inside the registered project root."""
+
+    root = spec.path.resolve()
+    for token in tokens:
+        if token.startswith("-") or not ("/" in token or "\\" in token or token.endswith(".py")):
+            continue
+        candidate = (root / token).resolve()
+        if not candidate.is_relative_to(root):
+            raise ValueError(f"registered command path escapes {spec.project_id} root")
+
+
 def build_command(spec: ProjectSpec, action: str) -> tuple[str, ...]:
     if action not in spec.actions:
         raise ValueError(f"action {action} is not registered for {spec.project_id}")
     tokens = list(spec.actions[action])
+    _validate_command_paths(spec, tokens)
     if tokens and tokens[0].endswith(".py"):
         return (_project_python(spec), *tokens)
     if tokens and tokens[0] == "-m":

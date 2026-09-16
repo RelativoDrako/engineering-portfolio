@@ -58,10 +58,12 @@ Feedback classifications are `EXPECTED`, `UNEXPECTED`,
 note. Each record also declares its source:
 
 * `HUMAN` — a future real operator assessment;
-* `SYNTHETIC_INTEGRATION_VALIDATION` — the four bounded records created while
-  validating this integration surface.
+* `SYNTHETIC_INTEGRATION_VALIDATION` — the four existing bounded records from
+  earlier integration validation.
 
-Neither source changes project evidence or triggers retraining.
+Neither source changes project evidence or triggers retraining. Normal
+integration validation is read-only with respect to persistent feedback and
+does not recreate these records.
 
 ## Deterministic analysis
 

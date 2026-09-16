@@ -12,6 +12,8 @@ TEMPLATES_DIR = ROOT_DIR / "templates"
 STATIC_DIR = ROOT_DIR / "static"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
+ROOT_VENV_DIR = ROOT_DIR / ".venv"
+BOOTSTRAP_LOG_PATH = VAR_DIR / "bootstrap.log"
 
 
 def ensure_runtime_dirs() -> None:

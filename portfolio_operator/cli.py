@@ -15,6 +15,7 @@ from .learning import (
     project_learning_explanation,
     readiness_by_project,
 )
+from .preflight import portfolio_preflight, project_preflight
 from .registry import load_registry
 from .runner import ActionResult, run_registered_action
 from .service import PortfolioService
@@ -46,6 +47,8 @@ def _show_project(service: PortfolioService, project_id: str) -> None:
     print(f"\n{spec.name} ({spec.project_id})")
     print(f"WHAT THIS DEMONSTRATES: {spec.plain_language_description}")
     print(f"DOMAIN: {spec.domain}")
+    readiness = project_preflight(spec)
+    print(f"READINESS: {readiness['prerequisites']}; evidence={readiness['evidence_state']}; revision={readiness['revision_status']}")
     print("PREREQUISITES:")
     for item in spec.prerequisites:
         print(f"- {item}")
@@ -60,6 +63,8 @@ def _show_project(service: PortfolioService, project_id: str) -> None:
     print(f"LEARNING OBSERVED TODAY: {learning['observed_today']}")
     print(f"FUTURE VAE POSSIBILITY: {learning['vae']}")
     print(f"FUTURE GAN POSSIBILITY: {learning['gan']}")
+    print("GUIDED OPERATE FLOW: Understand -> Check -> Prepare -> Execute -> Review -> Verify -> Replay / Explore")
+    print("Registered actions run from this root surface with the project's own working directory.")
     print("SUPPORTED ACTIONS:")
     for index, action in enumerate(spec.supported_actions, start=1):
         print(f"{index}. {action}")
@@ -113,6 +118,21 @@ def _cross_project(service: PortfolioService) -> None:
             print(f"{snapshot.spec.project_id}: run={snapshot.observation.run_id}; status={snapshot.observation.status}; features={snapshot.observation.features}; labels={snapshot.observation.labels}")
         else:
             print(f"{snapshot.spec.project_id}: no latest valid run")
+
+
+def _print_diagnostics(service: PortfolioService) -> None:
+    report = portfolio_preflight(service.registry)
+    print("\nEngineering Portfolio Diagnostics")
+    print(f"REGISTRY: {report['registry']}")
+    print(f"PROJECTS_DISCOVERED: {report['projects_discovered']}")
+    print(f"WEB_BINDING: {report['web_binding']}")
+    for item in report["projects"]:
+        np02 = item.get("np02_port")
+        port = "" if not np02 else f"; PostgreSQL={np02['port_semantics']}; listener={np02['postgresql_readiness']}"
+        print(
+            f"{item['project_id']}: prerequisites={item['prerequisites']}; latest={item['latest_valid_run']}; "
+            f"evidence={item['evidence_state']}; revision={item['revision_status']}{port}"
+        )
 
 
 def _feedback_overview(service: PortfolioService) -> None:
@@ -232,9 +252,10 @@ def interactive(service: PortfolioService) -> int:
     print("2 NP02 Governed Data & Analytics")
     print("3 NP03 Governed AI Assurance")
     print("4 NP04 Architecture Decision Workbench")
-    print("5 Cross-project observations")
-    print("6 Feedback")
-    print("7 Learning concepts")
+    print("5 Project status / preflight")
+    print("6 Results / observations")
+    print("7 Feedback")
+    print("8 Learning concepts")
     print("0 Exit")
     try:
         choice = input("Select: ").strip()
@@ -243,10 +264,12 @@ def interactive(service: PortfolioService) -> int:
     if choice in {"1", "2", "3", "4"}:
         _show_project(service, f"NP0{choice}")
     elif choice == "5":
-        _cross_project(service)
+        _print_diagnostics(service)
     elif choice == "6":
-        _feedback_overview(service)
+        _cross_project(service)
     elif choice == "7":
+        _feedback_overview(service)
+    elif choice == "8":
         _learning_menu(service)
     return 0
 
@@ -255,9 +278,13 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Engineering portfolio local operator")
     parser.add_argument("--project", choices=["NP01", "NP02", "NP03", "NP04"])
     parser.add_argument("--action")
+    parser.add_argument("--diagnostics", action="store_true")
     args = parser.parse_args(list(argv) if argv is not None else None)
     registry = load_registry()
     service = PortfolioService(registry, OperatorStore())
+    if args.diagnostics:
+        _print_diagnostics(service)
+        return 0
     if args.project and args.action:
         spec = registry.project(args.project)
         result = run_registered_action(spec, args.action)

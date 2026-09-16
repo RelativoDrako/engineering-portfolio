@@ -1,8 +1,7 @@
-"""Read the four latest project results and record one bounded review per project."""
+"""Read the four latest project results without mutating persistent feedback."""
 
 from __future__ import annotations
 
-import hashlib
 import os
 import sys
 from pathlib import Path
@@ -18,7 +17,7 @@ from portfolio_operator.storage import OperatorStore
 def main() -> int:
     registry = load_registry()
     service = PortfolioService(registry, OperatorStore())
-    effective_port = os.environ.get("NP02_DB_PORT", "55540")
+    effective_port = os.environ.get("NP02_DB_PORT", "55433")
     preflight = run_registered_action(
         registry.project("NP02"), "preflight", env={"NP02_DB_PORT": effective_port}
     )
@@ -28,24 +27,12 @@ def main() -> int:
         if observation is None:
             print(f"{snapshot.spec.project_id}: NO_LATEST_VALID_RUN")
             continue
-        feedback_id = "fb-" + hashlib.sha256(
-            f"{observation.project_id}|{observation.run_id}|KNOWN_TEST_SCENARIO|integration".encode("utf-8")
-        ).hexdigest()[:20]
-        service.store.record_feedback(
-            feedback_id=feedback_id,
-            project_id=observation.project_id,
-            run_id=observation.run_id,
-            classification="KNOWN_TEST_SCENARIO",
-            explanation_useful="YES",
-            note="Synthetic local integration review.",
-            source="SYNTHETIC_INTEGRATION_VALIDATION",
-        )
         print(
             f"{observation.project_id}: run={observation.run_id}; status={observation.status}; "
-            f"observation={observation.observation_id}; feedback={feedback_id}"
+            f"observation={observation.observation_id}; feedback=NOT_MUTATED"
         )
     print(f"OBSERVATIONS_REGISTERED={len(service.store.observations())}")
-    print(f"FEEDBACK_REGISTERED={len(service.store.feedback())}")
+    print(f"FEEDBACK_REGISTERED={len(service.store.feedback())}; PERSISTENT_FEEDBACK_MUTATIONS=0")
     return 0
 
 

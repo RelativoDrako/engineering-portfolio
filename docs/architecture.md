@@ -24,6 +24,12 @@ explicit project working directory and `shell=False` (the default used by
 `subprocess.run`). Browser POSTs select one of those registered actions; they
 cannot submit a command string.
 
+`START_PORTFOLIO.cmd` is a thin Windows entrypoint. It delegates environment
+reuse/repair, port handling and UI startup to `portfolio_operator.bootstrap`.
+It does not implement project orchestration or domain logic. The root
+preflight reads project paths, local revisions, environment presence, local
+service listeners and latest evidence without executing a domain scenario.
+
 The root database contains references, run metadata and bounded features. It
 does not copy source records, PLC state, PostgreSQL rows or assurance corpus
 content. Evidence verification follows each project's existing `SHA256SUMS`
@@ -45,9 +51,10 @@ human-approved project execution.
 5. Persist the envelope idempotently in the operator store.
 6. Let a human run a registered action or record feedback.
 
-The four integration-validation feedback rows are marked
+The four existing integration-validation feedback rows are marked
 `SYNTHETIC_INTEGRATION_VALIDATION`; future operator entries are marked
-`HUMAN`. Neither source triggers automatic retraining.
+`HUMAN`. Normal integration validation does not create persistent feedback.
+Neither source triggers automatic retraining.
 
 Actions that may remove runtime resources are confirmation-gated. Failed
 subprocesses are reported with stage, exit status, stdout/stderr and the
