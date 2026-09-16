@@ -1,95 +1,14 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const stopButton = document.querySelector("#stop-operator");
-  if (stopButton) {
-    stopButton.addEventListener("click", async () => {
-      if (!window.confirm("Stop only this local portfolio operator? Project services will remain unchanged.")) return;
-      stopButton.disabled = true;
-      try {
-        const response = await fetch("/operator/stop", { method: "POST" });
-        const payload = await response.json();
-        window.alert(payload.meaning || payload.reason || "The local operator is stopping.");
-      } catch (error) {
-        window.alert(`The local operator could not confirm shutdown: ${error}`);
-      }
-    });
-  }
+(() => {
+  const select = document.querySelector('#theme-select');
+  const stored = localStorage.getItem('portfolio-theme') || 'system';
+  const applyTheme = (mode) => { document.documentElement.dataset.theme = mode; if (select) select.value = mode; };
+  applyTheme(stored);
+  select?.addEventListener('change', () => { localStorage.setItem('portfolio-theme', select.value); applyTheme(select.value); });
 
-  document.querySelectorAll("form[data-destructive='true']").forEach((form) => {
-    form.addEventListener("submit", (event) => {
-      if (!window.confirm("This action removes local runtime resources. Continue?")) {
-        event.preventDefault();
-        return;
-      }
-      const confirmation = form.querySelector("input[name='confirm']");
-      if (confirmation) confirmation.value = "true";
-    });
-  });
+  const stop = document.querySelector('#stop-operator');
+  stop?.addEventListener('click', async () => { if (!window.confirm('Stop only this local portfolio operator? Project services remain unchanged.')) return; stop.disabled = true; try { const r = await fetch('/operator/stop', {method:'POST'}); const p = await r.json(); window.alert(p.human_message || 'The local operator is stopping.'); } catch (e) { window.alert('The local operator could not confirm shutdown.'); } });
 
-  document.querySelectorAll("form.action-form").forEach((form) => {
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const panel = document.querySelector("#operation-result");
-      const button = form.querySelector("button");
-      if (!panel || !button) return;
-      panel.hidden = false;
-      panel.innerHTML = "<h2>Operation</h2><p><strong>Status:</strong> RUNNING</p><p>Starting the registered project action…</p>";
-      button.disabled = true;
-      try {
-        const response = await fetch(form.action, { method: "POST", body: new FormData(form) });
-        const result = await response.json();
-        const details = result.technical_details || {};
-        const technical = [details.stdout, details.stderr].filter(Boolean).join("\n");
-        panel.replaceChildren();
-        const heading = document.createElement("h2");
-        heading.textContent = "Operation result";
-        panel.appendChild(heading);
-        [
-          ["Project", result.project_id || "UNKNOWN"],
-          ["Action", result.action || "UNKNOWN"],
-          ["Status", result.status || "UNKNOWN"],
-          ["What happened", result.result_summary || result.reason || "No summary was returned."],
-          ["Meaning", result.meaning || "Review the operation result."],
-          ["Evidence", result.evidence_reference || "No evidence reference returned."],
-          ["Next useful action", result.next_action || "Review the project surface."]
-        ].forEach(([label, value]) => {
-          const line = document.createElement("p");
-          const key = document.createElement("strong");
-          key.textContent = `${label}: `;
-          line.append(key, document.createTextNode(value));
-          panel.appendChild(line);
-        });
-        if (technical) {
-          const details = document.createElement("details");
-          const summary = document.createElement("summary");
-          summary.textContent = "Technical details";
-          const pre = document.createElement("pre");
-          pre.textContent = technical;
-          details.append(summary, pre);
-          panel.appendChild(details);
-        }
-      } catch (error) {
-        panel.innerHTML = `<h2>Operation result</h2><p><strong>Status:</strong> FAIL</p><p>Unable to contact the local operator surface: ${error}</p>`;
-      } finally {
-        button.disabled = false;
-      }
-    });
-  });
-
-  document.querySelectorAll("form.feedback-form").forEach((form) => {
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const result = document.querySelector("#feedback-result");
-      if (!result) return;
-      result.textContent = "Recording HUMAN feedback…";
-      try {
-        const response = await fetch(form.action, { method: "POST", body: new FormData(form) });
-        const payload = await response.json();
-        result.textContent = payload.status === "RECORDED" || payload.status === "ALREADY_RECORDED"
-          ? `${payload.status}: HUMAN feedback was stored locally. It does not change project evidence or trigger retraining.`
-          : `Feedback was not recorded: ${payload.reason || "unknown reason"}`;
-      } catch (error) {
-        result.textContent = `Feedback could not be recorded: ${error}`;
-      }
-    });
-  });
-});
+  const render = (panel, r) => { panel.replaceChildren(); const h = document.createElement('h2'); h.textContent = 'Operation result'; panel.appendChild(h); [['Status',r.status],['What happened',r.human_summary || r.human_message || 'The action completed without an interpretable result.'],['Meaning',r.technical_summary || 'Review the technical trace.'],['Evidence',r.evidence_reference || 'NOT_CHECKED'],['Receipt',r.receipt_reference || 'NOT_CHECKED'],['Next useful action',r.status === 'PASS' ? 'Inspect evidence or replay intentionally.' : 'Review the reason and prerequisites before retrying.']].forEach(([k,v]) => { const p=document.createElement('p'); const b=document.createElement('strong'); b.textContent=`${k}: `; p.append(b,document.createTextNode(String(v))); panel.appendChild(p); }); const a=document.createElement('a'); a.href=`/executions/${r.execution_id}/view`; a.textContent='Open human and technical trace'; panel.appendChild(a); };
+  document.querySelectorAll('form.action-form').forEach((form) => form.addEventListener('submit', async (event) => { event.preventDefault(); const panel=document.querySelector('#operation-result'), button=form.querySelector('button'); if(!panel||!button) return; panel.hidden=false; panel.innerHTML='<h2>Operation</h2><p><strong>Status:</strong> RUNNING</p><p>Starting · checking prerequisites · launching registered action…</p>'; button.disabled=true; try { const start=await fetch(form.action,{method:'POST',body:new FormData(form)}); const initial=await start.json(); if(!initial.execution_id){ render(panel,initial); return; } let current=initial; for(let i=0;i<120 && (current.status==='READY'||current.status==='RUNNING');i++){ await new Promise(r=>setTimeout(r,250)); const poll=await fetch(`/executions/${current.execution_id}`); current=await poll.json(); } render(panel,current); } catch(e) { render(panel,{status:'FAIL',human_summary:'The operator surface could not complete the request.',technical_summary:'HTTP_RESPONSE_FAILED',evidence_reference:'NOT_CHECKED',execution_id:''}); } finally { button.disabled=false; } }));
+  document.querySelectorAll('form.feedback-form').forEach((form) => form.addEventListener('submit', async (event) => { event.preventDefault(); const out=document.querySelector('#feedback-result'); if(!out)return; out.textContent='Recording human feedback…'; try { const p=await (await fetch(form.action,{method:'POST',body:new FormData(form)})).json(); out.textContent=p.status==='RECORDED'||p.status==='ALREADY_RECORDED'?`${p.status}: human feedback was stored locally.`:`Feedback was not recorded: ${p.human_message||'input could not be accepted.'}`; } catch(e) { out.textContent='Feedback could not be recorded.'; } }));
+})();

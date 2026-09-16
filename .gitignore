@@ -11,3 +11,4 @@ var/*.sqlite3-*
 var/runs/
 var/tmp/
 var/latest_valid.json
+var/operator_runs/

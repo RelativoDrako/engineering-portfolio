@@ -54,9 +54,9 @@ def _show_project(service: PortfolioService, project_id: str) -> None:
         print(f"- {item}")
     if snapshot.latest:
         summary = snapshot.latest.result.get("result_summary", {})
-        print(f"LATEST RESULT: run_id={snapshot.latest.run_id}; status={snapshot.latest.result.get('status', 'UNKNOWN')}; summary={summary}")
+        print(f"LATEST RESULT: run_id={snapshot.latest.run_id}; status={snapshot.latest.result.get('status', 'NOT_CHECKED')}; summary={summary}")
         print(f"EVIDENCE: {snapshot.latest.run_root}")
-        print(f"DOMAIN AUTHORITY: {PROJECT_AUTHORITIES.get(project_id, 'UNKNOWN')}")
+        print(f"DOMAIN AUTHORITY: {PROJECT_AUTHORITIES.get(project_id, 'NOT_CHECKED')}")
     else:
         print("LATEST RESULT: no latest valid run discovered")
     learning = project_learning_explanation(project_id)

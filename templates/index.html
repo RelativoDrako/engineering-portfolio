@@ -1,33 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">Local learning &amp; operations surface</p>
-  <h1>Engineering Portfolio</h1>
-  <p class="lead">Explore four independent engineering projects, inspect their latest verified results and operate only the actions you choose. Everything stays local; no cloud account is required.</p>
-  <p class="notice compact">4 independent projects · Local only · No cloud required</p>
-</section>
-<section class="grid">
-{% for item in projects %}
-  <article class="card">
-    <h2>{{ item.spec.name }}</h2>
-    <p>{{ item.spec.plain_language_description }}</p>
-    {% if item.latest %}
-      <p class="status">Latest: <strong>{{ item.latest.result.get('status', 'UNKNOWN') }}</strong> · {{ item.latest.run_id }}</p>
-    {% else %}<p class="status">No latest valid run discovered.</p>{% endif %}
-    {% set ready = readiness[item.spec.project_id] %}
-    <p class="minor">Environment: {{ ready.prerequisites }} · Services: {{ ready.service_state }} · Evidence: {{ ready.evidence_state }}</p>
-    <p class="card-links"><a href="/projects/{{ item.spec.project_id }}/learn">Learn</a> · <a href="/projects/{{ item.spec.project_id }}">Operate</a> · <a href="/projects/{{ item.spec.project_id }}/runs">Results</a></p>
-  </article>
-{% endfor %}
-</section>
-<section class="card">
-  <h2>How to use this surface</h2>
-  <ol>
-    <li>Choose a project and read its plain-language purpose.</li>
-    <li>Check readiness, then use a registered action only when you intend to run it.</li>
-    <li>Review the result and evidence, add feedback if useful, then visit Learning for the descriptive-analysis boundary.</li>
-  </ol>
-  <p>Today the comparisons are deterministic and inspectable. VAE and GAN are secondary conceptual extensions only; neither is trained or operational.</p>
-</section>
-<p class="notice">This operator view preserves each project's own authority. It stores only references, bounded derived observations and explicit feedback; it does not copy run bundles or replace project-domain state.</p>
+<section class="hero"><p class="eyebrow">Daniel Franco Fajardo</p><h1>Principal Systems Architect <span class="muted">| Critical &amp; Intelligent Infrastructure</span></h1><p class="lead">Engineering Portfolio</p><p class="hero-copy">Local-first demonstrations of resilient operations, governed data, AI assurance and architecture decision-making.</p><div class="status-strip"><span>4 independent projects</span><span>Local only</span><span>No cloud required</span></div></section>
+<section class="section-heading"><h2>Featured projects</h2><a href="/operate">Open operator</a></section>
+<section class="grid">{% for item in projects %}{% set ready = readiness[item.spec.project_id] %}<article class="card project-card"><p class="card-kicker">{{ item.spec.domain }}</p><h2>{{ item.spec.name }}</h2><p>{{ item.spec.plain_language_description }}</p><div class="card-status"><span class="status-dot" aria-hidden="true"></span><span>Environment: {{ display_status(ready.prerequisites) }}</span><span>Evidence: {{ display_status(ready.evidence_state) }}</span></div>{% if item.latest %}<p class="minor">Latest run <code>{{ item.latest.run_id }}</code> · {{ display_status(item.latest.result.get('status')) }}</p>{% else %}<p class="minor">Latest result: NOT_CHECKED</p>{% endif %}<p class="card-links"><a href="/projects/{{ item.spec.project_id }}/learn">Learn</a><a href="/projects/{{ item.spec.project_id }}">Operate</a><a href="/projects/{{ item.spec.project_id }}/runs">Evidence</a></p></article>{% endfor %}</section>
+<section class="split-section"><div><h2>How to explore</h2><p>Read a project first, check its local readiness, then run one registered action intentionally. Results, verification and replay remain linked to the project's own evidence.</p></div><div><h2>Engineering principles</h2><p>Traceable architecture, explicit authority boundaries, failure-aware design, reproducibility and human review where appropriate.</p></div></section><section class="notice"><strong>Learning boundary:</strong> deterministic analysis is active. VAE and GAN are conceptual demonstrations only; no model is trained or operational.</section>
 {% endblock %}

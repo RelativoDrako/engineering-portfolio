@@ -84,6 +84,28 @@ class OperatorStore:
                     state TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS operator_executions (
+                    execution_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    action_id TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    reason_code TEXT,
+                    started_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    duration_ms INTEGER,
+                    source_commit TEXT NOT NULL,
+                    cwd_relative TEXT NOT NULL,
+                    sanitized_argv_json TEXT NOT NULL,
+                    exit_code INTEGER,
+                    human_summary TEXT NOT NULL,
+                    technical_summary TEXT NOT NULL,
+                    project_run_id TEXT,
+                    evidence_hash TEXT,
+                    evidence_reference TEXT,
+                    operator_result_hash TEXT,
+                    stage_json TEXT NOT NULL,
+                    receipt_reference TEXT
+                );
                 """
             )
             # The four existing integration records predate source tracking.
@@ -92,6 +114,8 @@ class OperatorStore:
             columns = {row[1] for row in connection.execute("PRAGMA table_info(feedback)")}
             if "source" not in columns:
                 connection.execute("ALTER TABLE feedback ADD COLUMN source TEXT NOT NULL DEFAULT 'HUMAN'")
+            if "execution_id" not in columns:
+                connection.execute("ALTER TABLE feedback ADD COLUMN execution_id TEXT")
             connection.execute(
                 """
                 UPDATE feedback
@@ -157,6 +181,7 @@ class OperatorStore:
         note: str | None = None,
         timestamp: str | None = None,
         source: str = "HUMAN",
+        execution_id: str | None = None,
     ) -> bool:
         if classification not in FEEDBACK_CLASSIFICATIONS:
             raise StorageError(f"invalid feedback classification: {classification}")
@@ -169,12 +194,51 @@ class OperatorStore:
             cursor = connection.execute(
                 """
                 INSERT OR IGNORE INTO feedback
-                (feedback_id, project_id, run_id, classification, explanation_useful, note, timestamp, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (feedback_id, project_id, run_id, classification, explanation_useful, note, timestamp, source, execution_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (feedback_id, project_id, run_id, classification, explanation_useful, note, stamp, source),
+                (feedback_id, project_id, run_id, classification, explanation_useful, note, stamp, source, execution_id),
             )
             return cursor.rowcount == 1
+
+    def record_execution(self, record: dict[str, Any]) -> None:
+        """Persist root-operator metadata; project evidence stays in each project."""
+
+        fields = (
+            "execution_id", "project_id", "action_id", "status", "reason_code", "started_at",
+            "completed_at", "duration_ms", "source_commit", "cwd_relative", "sanitized_argv_json",
+            "exit_code", "human_summary", "technical_summary", "project_run_id", "evidence_hash",
+            "evidence_reference", "operator_result_hash", "stage_json", "receipt_reference",
+        )
+        values = [record.get(field) for field in fields]
+        with self._connect() as connection:
+            connection.execute(
+                f"INSERT INTO operator_executions ({', '.join(fields)}) VALUES ({', '.join('?' for _ in fields)}) "
+                "ON CONFLICT(execution_id) DO UPDATE SET "
+                + ", ".join(f"{field}=excluded.{field}" for field in fields if field != "execution_id"),
+                values,
+            )
+
+    def execution(self, execution_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM operator_executions WHERE execution_id = ?", (execution_id,)).fetchone()
+        if row is None:
+            return None
+        item = dict(row)
+        item["sanitized_argv"] = json.loads(item.pop("sanitized_argv_json"))
+        item["stages"] = json.loads(item.pop("stage_json"))
+        return item
+
+    def executions(self, project_id: str | None = None) -> list[dict[str, Any]]:
+        query = "SELECT execution_id FROM operator_executions"
+        params: tuple[Any, ...] = ()
+        if project_id:
+            query += " WHERE project_id = ?"
+            params = (project_id,)
+        query += " ORDER BY started_at DESC"
+        with self._connect() as connection:
+            ids = [str(row[0]) for row in connection.execute(query, params).fetchall()]
+        return [item for item in (self.execution(execution_id) for execution_id in ids) if item is not None]
 
     def feedback(self, project_id: str | None = None) -> list[dict[str, Any]]:
         query = "SELECT * FROM feedback"

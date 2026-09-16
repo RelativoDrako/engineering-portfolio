@@ -42,7 +42,7 @@ def _built_in(spec: ProjectSpec, action: str) -> ActionResult | None:
         return ActionResult(spec.project_id, action, str(spec.path), None, "GUIDANCE_ONLY", _now(), _now(), 0, "PASS", guidance, None)
     if action == "latest":
         latest = load_latest(spec)
-        summary = "No latest valid run is available." if latest is None else f"Latest valid run: {latest.run_id} ({latest.result.get('status', 'UNKNOWN')}); evidence={latest.run_root}"
+        summary = "No latest valid run is available." if latest is None else f"Latest valid run: {latest.run_id} ({latest.result.get('status', 'NOT_CHECKED')}); evidence={latest.run_root}"
         return ActionResult(spec.project_id, action, str(spec.path), None, "READ_ONLY", _now(), _now(), 0, "PASS", summary, str(latest.run_root) if latest else None)
     return None
 

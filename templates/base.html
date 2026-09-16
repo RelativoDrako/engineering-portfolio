@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Daniel Franco Fajardo">
+  <meta name="description" content="Local-first engineering portfolio by Daniel Franco Fajardo.">
   <title>{{ title }}</title>
   <link rel="stylesheet" href="/static/style.css">
   <script defer src="/static/app.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <a href="/" class="brand">Engineering Portfolio</a>
-    <nav><a href="/">Projects</a><a href="/feedback">Feedback</a><a href="/learning">Learning</a><button id="stop-operator" type="button" class="link-button">Stop local operator</button></nav>
+    <a href="/" class="brand"><span>Daniel Franco Fajardo</span><small>Engineering Portfolio</small></a>
+    <nav aria-label="Primary navigation"><a href="/">Portfolio</a><a href="/operate">Operate</a><a href="/evidence">Evidence</a><a href="/feedback">Feedback</a><a href="/learning">Learning</a><a href="/about">About</a></nav>
+    <div class="header-tools"><label for="theme-select" class="visually-hidden">Color theme</label><select id="theme-select" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select><button id="stop-operator" type="button" class="secondary-button">Stop local operator</button></div>
   </header>
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
+  <main class="container">{% block content %}{% endblock %}</main>
+  <footer><strong>Daniel Franco Fajardo</strong><span>Principal Systems Architect</span><span>Engineering Portfolio</span></footer>
 </body>
 </html>

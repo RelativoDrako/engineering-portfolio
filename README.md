@@ -1,6 +1,9 @@
-# Engineering Portfolio - Local Operator
+# Daniel Franco Fajardo — Engineering Portfolio
 
-This is a small local learning, operating and feedback surface for four
+**Principal Systems Architect | Critical & Intelligent Infrastructure**  
+Governed Architecture · Resilient Operations · Applied AI
+
+This is a local learning, operating and feedback surface for four
 independent engineering projects. It helps a reviewer understand each project,
 check prerequisites, run an existing registered entrypoint, inspect the latest
 result, verify evidence, replay a run and leave structured feedback.
