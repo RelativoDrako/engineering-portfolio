@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Engineering Portfolio - Local Operator</h1>
+<p class="lead">These four independent projects already produce traceable operational results. This local surface collects small derived summaries so a reviewer can compare runs, inspect evidence and provide feedback while each project's own authority remains unchanged.</p>
+<section class="grid">
+{% for item in projects %}
+  <article class="card">
+    <h2><a href="/projects/{{ item.spec.project_id }}">{{ item.spec.name }}</a></h2>
+    <p>{{ item.spec.plain_language_description }}</p>
+    {% if item.latest %}
+      <p class="status">Latest: <strong>{{ item.latest.result.get('status', 'UNKNOWN') }}</strong> · {{ item.latest.run_id }}</p>
+    {% else %}<p class="status">No latest valid run discovered.</p>{% endif %}
+  </article>
+{% endfor %}
+</section>
+<section class="card">
+  <h2>How to use this surface</h2>
+  <ol>
+    <li>Open a project to read its purpose, prerequisites and latest result.</li>
+    <li>Operate only a registered project action, then inspect the linked evidence bundle.</li>
+    <li>Record explicit feedback and open Learning for the current descriptive analysis and future model concepts.</li>
+  </ol>
+  <p>Today the comparisons are deterministic and inspectable. VAE and GAN are shown only as conceptual extensions; neither is trained or operational, and neither can replace project evidence or human authority.</p>
+</section>
+<p class="notice">The portfolio surface is an integration and operator view. It stores references and bounded derived observations in its own local SQLite store; it does not copy run bundles or replace project domain authorities.</p>
+{% endblock %}

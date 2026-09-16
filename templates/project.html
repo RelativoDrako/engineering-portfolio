@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/">← All projects</a></p>
+<h1>{{ snapshot.spec.name }}</h1>
+<p class="lead">{{ snapshot.spec.plain_language_description }}</p>
+<h2>Prerequisites</h2>
+<ul>{% for item in snapshot.spec.prerequisites %}<li>{{ item }}</li>{% endfor %}</ul>
+<h2>Operator view</h2>
+<p>Use the repository's existing entrypoints from its repository root. This surface never accepts arbitrary shell commands.</p>
+<div class="actions">
+{% for action in snapshot.spec.supported_actions %}
+  {% if action not in ['feedback', 'runs'] %}
+  <form method="post" action="/projects/{{ snapshot.spec.project_id }}/operate" class="action-form"{% if action == 'cleanup' %} data-destructive="true"{% endif %}>
+    <input type="hidden" name="action" value="{{ action }}">
+    {% if action == 'cleanup' %}<input type="hidden" name="confirm" value="false">{% endif %}
+    <button type="submit">{{ action.replace('_', ' ') }}</button>
+  </form>
+  {% endif %}
+{% endfor %}
+</div>
+{% if snapshot.latest %}
+<h2>Latest result</h2>
+<p><strong>{{ snapshot.latest.result.get('status', 'UNKNOWN') }}</strong> · run <code>{{ snapshot.latest.run_id }}</code></p>
+<pre>{{ snapshot.latest.result.get('result_summary', {}) | tojson(indent=2) }}</pre>
+<p><a href="/projects/{{ snapshot.spec.project_id }}/runs/{{ snapshot.latest.run_id }}">Inspect evidence</a> · <a href="/projects/{{ snapshot.spec.project_id }}/runs">List runs</a> · <a href="/projects/{{ snapshot.spec.project_id }}/learn">Learning</a></p>
+{% else %}<p>No latest valid run is available.</p>{% endif %}
+<h2>Learning for this project</h2>
+<p><strong>Observed today:</strong> {{ learning.observed_today }}</p>
+<p><strong>Future VAE concept:</strong> {{ learning.vae }}</p>
+<p><strong>Future GAN concept:</strong> {{ learning.gan }}</p>
+<p><a href="/projects/{{ snapshot.spec.project_id }}/learn">Read the learning explanation</a></p>
+<h2>Feedback</h2>
+<p>Feedback is stored as an explicit HUMAN operator assessment. It does not change project evidence or trigger retraining.</p>
+<form method="post" action="/projects/{{ snapshot.spec.project_id }}/feedback" class="feedback-form">
+  <label>Classification
+    <select name="classification" required>
+      <option value="EXPECTED">EXPECTED</option>
+      <option value="UNEXPECTED">UNEXPECTED</option>
+      <option value="NEEDS_INVESTIGATION">NEEDS_INVESTIGATION</option>
+      <option value="KNOWN_TEST_SCENARIO">KNOWN_TEST_SCENARIO</option>
+    </select>
+  </label>
+  <label>Explanation useful?
+    <select name="explanation_useful">
+      <option value="">(optional)</option>
+      <option value="YES">YES</option>
+      <option value="PARTIAL">PARTIAL</option>
+      <option value="NO">NO</option>
+    </select>
+  </label>
+  <label>Note (optional)<textarea name="note" rows="3"></textarea></label>
+  <button type="submit">Record human feedback</button>
+</form>
+{% endblock %}

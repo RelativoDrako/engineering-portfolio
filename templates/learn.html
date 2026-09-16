@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="lead">These projects already produce traceable operational results. The operator surface keeps small derived summaries so a reviewer can compare runs and provide feedback. Today the analysis is deterministic and inspectable; VAE and GAN are conceptual extensions only.</p>
+
+<section class="card">
+  <h2>Current state</h2>
+  <div class="facts">
+    <dt>Observed runs</dt><dd>{{ summary.observed_runs }}</dd>
+    <dt>Human feedback</dt><dd>{{ summary.human_feedback }}</dd>
+    <dt>Synthetic validation feedback</dt><dd>{{ summary.synthetic_validation_feedback }}</dd>
+    <dt>Active analysis</dt><dd>{{ summary.active_analysis }}</dd>
+    <dt>Trained models</dt><dd>{{ summary.trained_models }}</dd>
+    <dt>Active models</dt><dd>{{ summary.active_models }}</dd>
+    <dt>Generated evidence</dt><dd>{{ summary.generated_evidence }}</dd>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Feedback records</h2>
+  <p>Sources are explicit: <code>HUMAN</code> is future operator feedback; <code>SYNTHETIC_INTEGRATION_VALIDATION</code> identifies the four records created while validating this surface.</p>
+  {% if feedback %}
+  <ul class="run-list">{% for item in feedback %}<li>{{ item.project_id }} · {{ item.run_id }} · {{ item.classification }} · source={{ item.source }}</li>{% endfor %}</ul>
+  {% else %}<p>No feedback records are stored for this scope.</p>{% endif %}
+</section>
+
+{% if project_learning %}
+<section class="card">
+  <h2>What this project contributes</h2>
+  <p><strong>Observed today:</strong> {{ project_learning.observed_today }}</p>
+  <p><strong>Future VAE possibility:</strong> {{ project_learning.vae }}</p>
+  <p><strong>Future GAN possibility:</strong> {{ project_learning.gan }}</p>
+</section>
+{% endif %}
+
+<h2>Five-layer learning architecture</h2>
+<ol class="learning-layers">
+{% for layer in summary.layers %}
+  <li><strong>Layer {{ layer.number }} — {{ layer.name }}</strong> <code>{{ layer.kind }}</code><br>{{ layer.description }}</li>
+{% endfor %}
+</ol>
+
+<section class="card">
+  <h2>How this system learns today</h2>
+  <p><code>PROJECT_EVIDENCE</code> is produced only by actual NP01–NP04 executions. A <code>DERIVED_OBSERVATION</code> normalizes a known run for comparison; it is not domain authority.</p>
+  <p>The active analysis is <strong>DETERMINISTIC DESCRIPTIVE</strong>: feature summaries, run-to-run differences and bounded rule indications. It is not machine learning, prediction, diagnosis or automated decision authority.</p>
+  <pre>project evidence → derived observations → deterministic descriptive analysis → human interpretation</pre>
+  <p>Human feedback is retained separately and never triggers automatic retraining.</p>
+</section>
+
+<section class="card">
+  <h2>VAE — concept demonstration</h2>
+  <p><strong>Status:</strong> CONCEPT_DEMONSTRATION · <strong>trained:</strong> NO</p>
+  <p>A future VAE could learn what compatible historical runs tend to look like within one domain and highlight a materially different pattern. It would indicate difference from observed patterns, not whether a run is correct, safe or unsafe.</p>
+  <p><strong>Why not trained:</strong> the current set has one observation per project, which is insufficient for defensible representation learning. No rows are fabricated.</p>
+  <p><strong>Bounded example (NP02, example only):</strong> compare accepted, quarantined and rejected ratios, quality outcomes, lineage status and KPI status.</p>
+  <pre>NP02 history → compatible feature vectors → VAE encoder → latent representation → reconstruction → reconstruction difference → anomaly signal → human inspection</pre>
+  <p>{{ (summary.vae.data_readiness_by_project | tojson) }} · NO_MODEL_WAS_TRAINED=YES · NO_ANOMALY_SCORE_IS_REAL=YES</p>
+  <p>An anomaly signal is not a diagnosis and does not replace the PostgreSQL authority or human interpretation.</p>
+</section>
+
+<section class="card">
+  <h2>GAN — concept demonstration</h2>
+  <p><strong>Status:</strong> CONCEPT_DEMONSTRATION · <strong>training readiness:</strong> {{ summary.gan.training_readiness }} · <strong>trained:</strong> NO</p>
+  <p><strong>Bounded example (NP01, example only):</strong> a future generator might propose bounded sensor fluctuation, communication delay and an abnormal tank-level sequence.</p>
+  <p><strong>Label:</strong> SYNTHETIC_CANDIDATE</p>
+  <pre>synthetic candidate → schema validation → domain constraint validation → human review → explicit approval → NP01 execution → actual validation → evidence bundle</pre>
+  <p>GAN output authority is NONE. Auto-execution, promotion to a test fixture, evidence creation and feedback acceptance are all NO. A candidate is never project evidence.</p>
+</section>
+
+<h2>Data/model readiness</h2>
+<pre>{{ summary.vae | tojson(indent=2) }}
+{{ summary.gan | tojson(indent=2) }}</pre>
+
+<h2>Evidence and authority boundaries</h2>
+<ul>
+{% for project_id, authority in summary.project_authorities.items() %}<li><strong>{{ project_id }}</strong>: {{ authority }}</li>{% endfor %}
+<li><strong>engineering-portfolio</strong>: integration and operator surface only; its local SQLite store does not become a project-domain authority.</li>
+</ul>
+<p><code>MODEL_INFERENCE != PROJECT_EVIDENCE</code> · <code>SYNTHETIC_CANDIDATE != PROJECT_EVIDENCE</code> · <code>DERIVED_OBSERVATION != DOMAIN_AUTHORITY</code> · <code>HUMAN_FEEDBACK != AUTOMATIC_RETRAINING_SIGNAL</code></p>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p>These entries describe conceptual extension points; they are not trained or active models. Model output is never project evidence.</p>
+<h2>Conceptual interfaces</h2>
+<div class="grid">
+{% for model in conceptual_models %}
+  <article class="card">
+    <h3>{{ model.model_id }}</h3>
+    <p><strong>{{ model.model_type }}</strong> · {{ model.domain }} · {{ model.state }}</p>
+    <p>{{ model.purpose }}</p>
+    <p><strong>Trained:</strong> NO · <strong>Active:</strong> NO · <strong>Artifact:</strong> none</p>
+    <p>{{ model.limitations }}</p>
+  </article>
+{% endfor %}
+</div>
+<h2>Registered model artifacts</h2>
+{% if models %}<pre>{{ models | tojson(indent=2) }}</pre>{% else %}<p>None. TRAINED_MODELS=0 · ACTIVE_MODELS=0.</p>{% endif %}
+{% endblock %}
