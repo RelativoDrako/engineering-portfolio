@@ -1,14 +1,21 @@
 (() => {
   const select = document.querySelector('#theme-select');
-  const stored = localStorage.getItem('portfolio-theme') || 'system';
   const applyTheme = (mode) => { document.documentElement.dataset.theme = mode; if (select) select.value = mode; };
-  applyTheme(stored);
+  applyTheme(localStorage.getItem('portfolio-theme') || 'system');
   select?.addEventListener('change', () => { localStorage.setItem('portfolio-theme', select.value); applyTheme(select.value); });
 
-  const stop = document.querySelector('#stop-operator');
-  stop?.addEventListener('click', async () => { if (!window.confirm('Stop only this local portfolio operator? Project services remain unchanged.')) return; stop.disabled = true; try { const r = await fetch('/operator/stop', {method:'POST'}); const p = await r.json(); window.alert(p.human_message || 'The local operator is stopping.'); } catch (e) { window.alert('The local operator could not confirm shutdown.'); } });
+  document.querySelector('#stop-operator')?.addEventListener('click', async () => { if (!window.confirm('Stop only this local portfolio operator? Project services remain unchanged.')) return; const r = await fetch('/operator/stop', {method:'POST'}); const p = await r.json(); window.alert(p.human_message || 'The local operator is stopping.'); });
 
-  const render = (panel, r) => { panel.replaceChildren(); const h = document.createElement('h2'); h.textContent = 'Operation result'; panel.appendChild(h); [['Status',r.status],['What happened',r.human_summary || r.human_message || 'The action completed without an interpretable result.'],['Meaning',r.technical_summary || 'Review the technical trace.'],['Evidence',r.evidence_reference || 'NOT_CHECKED'],['Receipt',r.receipt_reference || 'NOT_CHECKED'],['Next useful action',r.status === 'PASS' ? 'Inspect evidence or replay intentionally.' : 'Review the reason and prerequisites before retrying.']].forEach(([k,v]) => { const p=document.createElement('p'); const b=document.createElement('strong'); b.textContent=`${k}: `; p.append(b,document.createTextNode(String(v))); panel.appendChild(p); }); const a=document.createElement('a'); a.href=`/executions/${r.execution_id}/view`; a.textContent='Open human and technical trace'; panel.appendChild(a); };
-  document.querySelectorAll('form.action-form').forEach((form) => form.addEventListener('submit', async (event) => { event.preventDefault(); const panel=document.querySelector('#operation-result'), button=form.querySelector('button'); if(!panel||!button) return; panel.hidden=false; panel.innerHTML='<h2>Operation</h2><p><strong>Status:</strong> RUNNING</p><p>Starting · checking prerequisites · launching registered action…</p>'; button.disabled=true; try { const start=await fetch(form.action,{method:'POST',body:new FormData(form)}); const initial=await start.json(); if(!initial.execution_id){ render(panel,initial); return; } let current=initial; for(let i=0;i<120 && (current.status==='READY'||current.status==='RUNNING');i++){ await new Promise(r=>setTimeout(r,250)); const poll=await fetch(`/executions/${current.execution_id}`); current=await poll.json(); } render(panel,current); } catch(e) { render(panel,{status:'FAIL',human_summary:'The operator surface could not complete the request.',technical_summary:'HTTP_RESPONSE_FAILED',evidence_reference:'NOT_CHECKED',execution_id:''}); } finally { button.disabled=false; } }));
-  document.querySelectorAll('form.feedback-form').forEach((form) => form.addEventListener('submit', async (event) => { event.preventDefault(); const out=document.querySelector('#feedback-result'); if(!out)return; out.textContent='Recording human feedback…'; try { const p=await (await fetch(form.action,{method:'POST',body:new FormData(form)})).json(); out.textContent=p.status==='RECORDED'||p.status==='ALREADY_RECORDED'?`${p.status}: human feedback was stored locally.`:`Feedback was not recorded: ${p.human_message||'input could not be accepted.'}`; } catch(e) { out.textContent='Feedback could not be recorded.'; } }));
+  const running = new Set(['READY','RUNNING']);
+  // Standard HTML form submission is the primary action path.  The server's
+  // POST/303/GET contract works with JavaScript disabled and prevents a
+  // browser refresh from repeating the registered action.
+  document.querySelectorAll('form.action-form').forEach((form) => form.addEventListener('submit', () => {
+    const button = form.querySelector('button');
+    // Defer the visual lock until after the browser has performed the native
+    // form default action; disabling synchronously can cancel that submission.
+    if (button) setTimeout(() => { button.disabled = true; button.textContent = 'Starting…'; }, 0);
+  }));
+  const execution=document.querySelector('#execution-view'); if(execution){ const id=execution.dataset.executionId; const refresh=async()=>{try{const r=await fetch(`/api/executions/${encodeURIComponent(id)}`);const p=await r.json();if(running.has(p.status))setTimeout(refresh,350);else window.location.reload();}catch(_){setTimeout(refresh,700);}}; refresh(); }
+  document.querySelectorAll('form.feedback-form').forEach((form) => form.addEventListener('submit', async (event) => { event.preventDefault(); const out=document.querySelector('#feedback-result'); if(!out)return; out.textContent='Recording human feedback…'; try { const p=await (await fetch(form.action,{method:'POST',body:new URLSearchParams(new FormData(form))})).json(); out.textContent=(p.status==='RECORDED'||p.status==='ALREADY_RECORDED')?`${p.status}: human feedback was stored locally.`:`Feedback was not recorded: ${p.human_message||'input could not be accepted.'}`; } catch(_) {out.textContent='Feedback could not be recorded.';} }));
 })();

@@ -65,7 +65,7 @@ def create_app(service: PortfolioService | None = None, stop_callback: Any | Non
     executions = execution_manager or ExecutionManager(operator.store)
 
     def render(name: str, **context: Any) -> HTMLResponse:
-        return HTMLResponse(templates.get_template(name).render(display_status=_display, **context))
+        return HTMLResponse(templates.get_template(name).render(display_status=_display, registry=operator.registry, **context))
 
     @app.get("/", response_class=HTMLResponse)
     async def index() -> HTMLResponse:
@@ -110,25 +110,42 @@ def create_app(service: PortfolioService | None = None, stop_callback: Any | Non
             return PlainTextResponse(str(exc), status_code=404)
         return render("runs.html", title=f"Runs - {snapshot.spec.name}", snapshot=snapshot, runs=runs)
 
-    @app.post("/projects/{project_id}/operate")
-    async def operate(project_id: str, request: _Request):
+    def _start_execution(project_id: str, action: str, confirm: bool = False) -> dict[str, Any]:
+        return executions.start(operator.registry.project(project_id), action, confirm=confirm)
+
+    @app.post("/projects/{project_id}/actions/{action_id}")
+    async def action_post(project_id: str, action_id: str, request: _Request):
+        """Progressive-enhancement endpoint: HTML POST redirects; JS requests JSON."""
+        from fastapi.responses import RedirectResponse
         payload = _payload_from_body(await request.body())
-        action = str(payload.get("action", "")).strip()
         try:
-            return JSONResponse(executions.start(operator.registry.project(project_id), action, confirm=_bool(payload.get("confirm"))), status_code=202)
+            record = _start_execution(project_id, action_id, _bool(payload.get("confirm")))
+            if "application/json" in request.headers.get("accept", ""):
+                return JSONResponse(record, status_code=202)
+            return RedirectResponse(f"/executions/{record['execution_id']}", status_code=303)
         except KeyError:
             return JSONResponse({"status": "BLOCKED", "reason_code": "PROJECT_NOT_FOUND", "human_message": "The registered project could not be found."}, status_code=404)
         except ValueError:
             return JSONResponse({"status": "BLOCKED", "reason_code": "ACTION_NOT_REGISTERED", "human_message": "This action is not registered for the project."}, status_code=400)
 
-    @app.get("/executions/{execution_id}")
+    @app.post("/projects/{project_id}/operate")
+    async def legacy_operate(project_id: str, request: _Request):
+        """Compatibility API; browser forms use the action-specific PRG route."""
+        payload = _payload_from_body(await request.body())
+        action = str(payload.get("action_id", payload.get("action", ""))).strip()
+        try:
+            return JSONResponse(_start_execution(project_id, action, _bool(payload.get("confirm"))), status_code=202)
+        except (KeyError, ValueError):
+            return JSONResponse({"status": "BLOCKED", "reason_code": "ACTION_NOT_REGISTERED", "human_message": "This action is not registered for the project."}, status_code=400)
+
+    @app.get("/api/executions/{execution_id}")
     async def execution_api(execution_id: str):
         record = executions.view(execution_id)
         if record is None:
             return JSONResponse({"status": "BLOCKED", "reason_code": "RESULT_NOT_FOUND", "human_message": "The requested execution receipt was not found."}, status_code=404)
         return JSONResponse(record)
 
-    @app.get("/executions/{execution_id}/view", response_class=HTMLResponse)
+    @app.get("/executions/{execution_id}", response_class=HTMLResponse)
     async def execution_view(execution_id: str) -> HTMLResponse:
         record = executions.view(execution_id)
         return render("execution.html", title=f"Execution {execution_id}", execution=record) if record else PlainTextResponse("execution receipt not found", status_code=404)

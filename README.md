@@ -3,6 +3,12 @@
 **Principal Systems Architect | Critical & Intelligent Infrastructure**  
 Governed Architecture · Resilient Operations · Applied AI
 
+## Professional links
+
+- [GitHub](https://github.com/RelativoDrako)
+- [Professional landing](https://relativodrako.github.io/)
+- [Contact](https://relativodrako.github.io/#contact)
+
 This is a local learning, operating and feedback surface for four
 independent engineering projects. It helps a reviewer understand each project,
 check prerequisites, run an existing registered entrypoint, inspect the latest
@@ -18,6 +24,8 @@ The projects remain separate repositories and remain independently runnable:
   review, or should be declined.
 * NP04 compares architecture alternatives against requirements, assumptions,
   risks, costs and verification needs.
+
+Project repositories: [NP01](https://github.com/RelativoDrako/industrial-resilience-ot-lab), [NP02](https://github.com/RelativoDrako/governed-data-analytics), [NP03](https://github.com/RelativoDrako/governed-ai-assurance), and [NP04](https://github.com/RelativoDrako/architecture-decision-workbench).
 
 The projects already produce traceable operational results. This root surface
 collects small derived summaries so a reviewer can compare runs and provide

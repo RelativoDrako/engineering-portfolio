@@ -1,5 +1,6 @@
 version = 1
 portfolio_id = "engineering-portfolio"
+root_repository_url = ""
 
 [[projects]]
 project_id = "NP01"
@@ -9,6 +10,7 @@ plain_language_description = "A synthetic two-tank industrial cell that detects 
 domain = "OT / industrial resilience"
 tested_commit = "c23fd11dedfe81ba8e1c529197e782abffcb4acd"
 requires_docker = true
+repository_url = "https://github.com/RelativoDrako/industrial-resilience-ot-lab"
 prerequisites = ["Python 3.12", "a project-local .venv", "Docker Desktop", "the local OpenPLC image and Mosquitto service described in the project README"]
 evidence_location = "var/runs"
 latest_valid_location = "var/latest_valid.json"
@@ -29,6 +31,7 @@ domain = "data lifecycle / business analytics"
 tested_commit = "287d718a323e2b979d622c8671414a4574e1e538"
 requires_docker = true
 default_port = 55433
+repository_url = "https://github.com/RelativoDrako/governed-data-analytics"
 prerequisites = ["Python 3.12", "a project-local .venv", "Docker Desktop", "the isolated PostgreSQL service; run preflight before the pipeline", "Metabase is optional and local-only"]
 evidence_location = "var/runs"
 latest_valid_location = "var/latest_valid.json"
@@ -48,6 +51,7 @@ relative_path = "../governed-ai-assurance"
 plain_language_description = "A small synthetic document set is evaluated so every query is supported, abstained, or routed to human review with validated evidence."
 domain = "AI assurance / evidence governance"
 tested_commit = "55d9c6afaed7b5351f1a60e7eee6ceb33550132a"
+repository_url = "https://github.com/RelativoDrako/governed-ai-assurance"
 prerequisites = ["Python 3.12", "a project-local .venv", "the dependencies described in the project README"]
 evidence_location = "var/runs"
 latest_valid_location = "var/latest_valid.json"
@@ -68,6 +72,7 @@ prerequisites = ["Python 3.12", "a project-local .venv", "pytest for the test su
 evidence_location = "var/runs"
 latest_valid_location = "var/latest_valid.json"
 replay_change = "ASM-002"
+repository_url = "https://github.com/RelativoDrako/architecture-decision-workbench"
 [projects.actions]
 demo = ["scripts/demo.py"]
 tests = ["-m", "pytest"]

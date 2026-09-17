@@ -65,6 +65,7 @@ class ProjectSpec:
     tested_commit: str | None = None
     requires_docker: bool = False
     default_port: int | None = None
+    repository_url: str | None = None
 
     @property
     def path(self) -> Path:
@@ -117,6 +118,7 @@ class PortfolioRegistry:
     version: int
     portfolio_id: str
     projects: tuple[ProjectSpec, ...]
+    root_repository_url: str | None = None
 
     def project(self, project_id: str) -> ProjectSpec:
         for item in self.projects:
@@ -180,6 +182,7 @@ def load_registry(path: Path = REGISTRY_PATH) -> PortfolioRegistry:
             tested_commit=str(item["tested_commit"]) if item.get("tested_commit") else None,
             requires_docker=bool(item.get("requires_docker", False)),
             default_port=int(item["default_port"]) if item.get("default_port") is not None else None,
+            repository_url=str(item["repository_url"]) if item.get("repository_url") else None,
         )
         # Resolve during loading so an unsafe registry fails before any action.
         _ = spec.path
@@ -190,4 +193,5 @@ def load_registry(path: Path = REGISTRY_PATH) -> PortfolioRegistry:
         version=int(raw.get("version", 1)),
         portfolio_id=str(raw.get("portfolio_id", "engineering-portfolio")),
         projects=tuple(specs),
+        root_repository_url=str(raw["root_repository_url"]) if raw.get("root_repository_url") else None,
     )
