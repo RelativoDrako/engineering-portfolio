@@ -31,10 +31,10 @@ jobs:
           grep -q 'https://github.com/RelativoDrako' index.html
           grep -q 'https://relativodrako.github.io/' index.html
           grep -q 'https://relativodrako.github.io/#contact' index.html
-          ! rg -n 'C:\\|C:/|_nsambi_|localhost|FastAPI|Uvicorn|portfolio_operator' index.html assets README.md
-          rg -q "id:'NP01'" assets/portfolio.js
-          rg -q "id:'NP02'" assets/portfolio.js
-          rg -q "id:'NP03'" assets/portfolio.js
-          rg -q "id:'NP04'" assets/portfolio.js
-          rg -q 'Why this conclusion follows' assets/portfolio.js
-          rg -q 'Engineering takeaway' assets/portfolio.js
+          ! grep -R -n -E 'C:\\|C:/|_nsambi_|localhost|FastAPI|Uvicorn|portfolio_operator' index.html assets README.md
+          grep -q "id:'NP01'" assets/portfolio.js
+          grep -q "id:'NP02'" assets/portfolio.js
+          grep -q "id:'NP03'" assets/portfolio.js
+          grep -q "id:'NP04'" assets/portfolio.js
+          grep -q 'Why this conclusion follows' assets/portfolio.js
+          grep -q 'Engineering takeaway' assets/portfolio.js
