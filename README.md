@@ -101,6 +101,8 @@ Use a project view to read its purpose, check readiness and choose an
 intentional registered action. Only actions present in `portfolio.toml` are
 offered. A replay uses the registered project's latest run identifier; a new
 project run is created by that project and the parent is not overwritten.
+An execution detail page updates its status in place; refreshing or reopening
+that page only reads its receipt and never starts the action again.
 Destructive cleanup requires explicit confirmation. Feedback is labelled
 `HUMAN` only when entered by an operator; the four existing integration
 validation examples remain `SYNTHETIC_INTEGRATION_VALIDATION`.

@@ -169,7 +169,7 @@ def _start_web(port: int, *, browser_open: Callable[[str], bool] = webbrowser.op
     print(f"WEB_BROWSER_OPEN={'PASS' if opened else 'DOCUMENTED_FALLBACK'}")
     holder: dict[str, object] = {}
     app = create_app(stop_callback=lambda: setattr(holder["server"], "should_exit", True))
-    server = uvicorn.Server(uvicorn.Config(app, host=DEFAULT_HOST, port=selected_port, log_level="warning"))
+    server = uvicorn.Server(uvicorn.Config(app, host=DEFAULT_HOST, port=selected_port, log_level="warning", reload=False))
     holder["server"] = server
     server.run()
     return 0

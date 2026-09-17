@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -73,6 +74,34 @@ def test_post_redirect_get_refresh_does_not_reexecute(tmp_path):
         assert client.get(destination).status_code == 200
         assert client.get(destination).status_code == 200
         assert len(store.executions("NP03")) == before
+
+
+def test_execution_page_is_explicitly_marked_for_scoped_status_polling(tmp_path):
+    store = OperatorStore(tmp_path / "operator.sqlite3")
+    app = create_app(PortfolioService(load_registry(), store), execution_manager=ExecutionManager(store, tmp_path / "operator_runs"))
+    with TestClient(app) as client:
+        response = client.post("/projects/NP04/actions/latest", follow_redirects=False)
+        destination = response.headers["location"]
+        body = client.get(destination).text
+        home = client.get("/").text
+    assert 'data-page="execution"' in body
+    assert 'data-execution-id="op-' in body
+    assert 'data-page="execution"' not in home
+
+
+def test_browser_script_never_reloads_documents_and_scopes_polling_to_execution_page():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "static" / "app.js").read_text(encoding="utf-8")
+    assert "window.location.reload" not in script
+    assert "document.body.dataset.page === 'execution'" in script
+    assert "window.addEventListener('pagehide', stop" in script
+    assert "terminal.has(record.status)" in script
+
+
+def test_normal_web_runtime_explicitly_disables_server_reload():
+    root = Path(__file__).resolve().parents[1]
+    assert "reload=False" in (root / "portfolio_operator" / "bootstrap.py").read_text(encoding="utf-8")
+    assert "reload=False" in (root / "portfolio_operator" / "web.py").read_text(encoding="utf-8")
 
 
 def test_navigation_has_fixed_professional_links_and_no_root_repository_claim(tmp_path):

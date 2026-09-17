@@ -6,10 +6,10 @@
   <meta name="author" content="Daniel Franco Fajardo">
   <meta name="description" content="Local-first engineering portfolio by Daniel Franco Fajardo.">
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <script defer src="/static/app.js?v=browser-repair-r1"></script>
+  <link rel="stylesheet" href="/static/style.css?v=lifecycle-r1">
+  <script defer src="/static/app.js?v=lifecycle-r1"></script>
 </head>
-<body>
+<body data-page="{{ page_type|default('generic') }}"{% if execution_id %} data-execution-id="{{ execution_id }}"{% endif %}>
   <header class="site-header">
     <a href="/" class="brand"><span>Daniel Franco Fajardo</span><small>Engineering Portfolio</small></a>
     <nav aria-label="Primary navigation"><a href="/">Inicio</a><a href="/">Portfolio</a><a href="/operate">Operate</a><a href="/evidence">Evidence</a><a href="/feedback">Feedback</a><a href="/learning">Learning</a><a href="/about">About</a><a href="https://github.com/RelativoDrako" target="_blank" rel="noopener noreferrer">GitHub ↗</a><a href="https://relativodrako.github.io/" target="_blank" rel="noopener noreferrer">Landing ↗</a><a href="https://relativodrako.github.io/#contact" target="_blank" rel="noopener noreferrer">Contacto ↗</a></nav>

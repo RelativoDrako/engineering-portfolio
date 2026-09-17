@@ -65,7 +65,8 @@ def create_app(service: PortfolioService | None = None, stop_callback: Any | Non
     executions = execution_manager or ExecutionManager(operator.store)
 
     def render(name: str, **context: Any) -> HTMLResponse:
-        return HTMLResponse(templates.get_template(name).render(display_status=_display, registry=operator.registry, **context))
+        page_type = context.pop("page_type", name.removesuffix(".html"))
+        return HTMLResponse(templates.get_template(name).render(display_status=_display, registry=operator.registry, page_type=page_type, **context))
 
     @app.get("/", response_class=HTMLResponse)
     async def index() -> HTMLResponse:
@@ -148,7 +149,7 @@ def create_app(service: PortfolioService | None = None, stop_callback: Any | Non
     @app.get("/executions/{execution_id}", response_class=HTMLResponse)
     async def execution_view(execution_id: str) -> HTMLResponse:
         record = executions.view(execution_id)
-        return render("execution.html", title=f"Execution {execution_id}", execution=record) if record else PlainTextResponse("execution receipt not found", status_code=404)
+        return render("execution.html", title=f"Execution {execution_id}", execution=record, page_type="execution", execution_id=execution_id) if record else PlainTextResponse("execution receipt not found", status_code=404)
 
     @app.post("/projects/{project_id}/feedback")
     async def feedback(project_id: str, request: _Request):
@@ -193,7 +194,7 @@ def create_app(service: PortfolioService | None = None, stop_callback: Any | Non
 
 def main() -> int:
     import uvicorn
-    uvicorn.run("portfolio_operator.web:create_app", host=DEFAULT_HOST, port=DEFAULT_PORT, factory=True)
+    uvicorn.run("portfolio_operator.web:create_app", host=DEFAULT_HOST, port=DEFAULT_PORT, factory=True, reload=False)
     return 0
 
 
