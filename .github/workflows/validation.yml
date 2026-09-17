@@ -1,0 +1,40 @@
+name: Validation
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate static review surface
+        shell: bash
+        run: |
+          test -f index.html
+          test -f assets/portfolio.css
+          test -f assets/portfolio.js
+          node --check assets/portfolio.js
+          grep -q 'assets/portfolio.css' index.html
+          grep -q 'assets/portfolio.js' index.html
+          grep -q 'https://github.com/RelativoDrako/industrial-resilience-ot-lab' assets/portfolio.js
+          grep -q 'https://github.com/RelativoDrako/governed-data-analytics' assets/portfolio.js
+          grep -q 'https://github.com/RelativoDrako/governed-ai-assurance' assets/portfolio.js
+          grep -q 'https://github.com/RelativoDrako/architecture-decision-workbench' assets/portfolio.js
+          grep -q 'https://github.com/RelativoDrako' index.html
+          grep -q 'https://relativodrako.github.io/' index.html
+          grep -q 'https://relativodrako.github.io/#contact' index.html
+          ! rg -n 'C:\\|C:/|_nsambi_|localhost|FastAPI|Uvicorn|portfolio_operator' index.html assets README.md
+          rg -q "id:'NP01'" assets/portfolio.js
+          rg -q "id:'NP02'" assets/portfolio.js
+          rg -q "id:'NP03'" assets/portfolio.js
+          rg -q "id:'NP04'" assets/portfolio.js
+          rg -q 'Why this conclusion follows' assets/portfolio.js
+          rg -q 'Engineering takeaway' assets/portfolio.js

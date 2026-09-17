@@ -3,6 +3,15 @@
 **Principal Systems Architect | Critical & Intelligent Infrastructure**  
 Governed Architecture · Resilient Operations · Applied AI
 
+[![Validation](https://github.com/RelativoDrako/engineering-portfolio/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/RelativoDrako/engineering-portfolio/actions/workflows/validation.yml)
+
+## Publication & Validation Governance
+
+Publication remains human-controlled. GitHub Actions validates bounded public
+surfaces with read-only permissions and no deployment automation or secrets.
+Claims remain evidence-backed; routine publication never force-pushes or
+rewrites history.
+
 ## Open
 
 Open `index.html` in any modern browser. That is all that is required.
