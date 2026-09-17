@@ -1,7 +1,0 @@
-{% extends "base.html" %}
-{% block content %}
-<p><a href="/projects/{{ snapshot.spec.project_id }}">← Project</a></p>
-<h1>Runs · {{ snapshot.spec.name }}</h1>
-<p>Run bundles are read from the registered <code>{{ snapshot.spec.evidence_location }}</code> location in the project repository. The latest-successful pointer identifies one immutable run without copying its bundle.</p>
-<ul class="run-list">{% for run_id in runs %}<li><a href="/projects/{{ snapshot.spec.project_id }}/runs/{{ run_id }}">{{ run_id }}</a></li>{% else %}<li>No runs discovered.</li>{% endfor %}</ul>
-{% endblock %}
