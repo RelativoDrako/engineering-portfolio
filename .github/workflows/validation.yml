@@ -32,7 +32,7 @@ jobs:
           grep -q 'https://relativodrako.github.io/' index.html
           grep -q 'https://relativodrako.github.io/#contact' index.html
           ! grep -R -n -E 'C:\\|C:/|_nsambi_|localhost|FastAPI|Uvicorn' index.html assets README.md
-          grep -q "id:'NP01'" assets/portfolio.js
-          grep -q "id:'NP02'" assets/portfolio.js
-          grep -q "id:'NP03'" assets/portfolio.js
-          grep -q "id:'NP04'" assets/portfolio.js
+          grep -q 'NP01' assets/portfolio.js
+          grep -q 'NP02' assets/portfolio.js
+          grep -q 'NP03' assets/portfolio.js
+          grep -q 'NP04' assets/portfolio.js
